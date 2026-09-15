@@ -57,3 +57,7 @@ pip install -r requirements.txt
 ## License
 
 MIT
+
+## Author
+
+Jesús Fernando Gómez Brito ([Linkedin](www.linkedin.com/in/jesús-fernando-gómez-brito-02a895279))
