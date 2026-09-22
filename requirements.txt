@@ -5,3 +5,8 @@ jupyter
 matplotlib
 seaborn
 openpyxl
+fastapi
+uvicorn
+pydantic
+httpx
+pytest
