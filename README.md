@@ -1,9 +1,12 @@
 # Churn Model Deployment
 
+![CI](https://github.com/JFGBMath/churn-model-deployment/actions/workflows/ci.yml/badge.svg)
+
 End-to-end machine learning project: from model training to a production-ready,
 containerized API with automated testing and monitoring. Built to demonstrate the
 full lifecycle of taking a data science solution from experimentation to
-production,testing it and preparing it for deployment.
+production, testing it, and
+deploying it in a containerized, CI-tested setup.
 
 ## Project Status
 
@@ -11,8 +14,8 @@ production,testing it and preparing it for deployment.
 |---|---|---|
 | 1. Model Training | EDA + churn classification model | ✅ Done |
 | 2. API | FastAPI service serving predictions | ✅ Done |
-| 3. Containerization | Docker + docker-compose | 🚧 In progress |
-| 4. Testing & CI | pytest + GitHub Actions | ⬜ Pending |
+| 3. Containerization | Docker + docker-compose | ✅ Done |
+| 4. Testing & CI | pytest + GitHub Actions | ✅ Done |
 | 5. Monitoring | Prediction logging + data drift detection | ⬜ Pending |
 | 6. LLM Explainability | Natural-language prediction explanations | ⬜ Pending |
 | 7. Kubernetes | Local deployment manifests | ⬜ Pending |
@@ -55,8 +58,8 @@ this use case.
 - **Model**: scikit-learn (Logistic Regression, `ColumnTransformer` pipeline)
 - **API**: FastAPI + Pydantic v2
 - **Testing**: pytest, FastAPI `TestClient`
-- **Containerization**: Docker, docker-compose *(in progress)*
-- **CI/CD**: GitHub Actions *(planned)*
+- **Containerization**: Docker, docker-compose
+- **CI/CD**: GitHub Actions (automated test run on every push/PR to `main`)
 - **Monitoring**: Evidently (data drift), custom prediction logging *(planned)*
 - **Explainability**: SHAP + LLM via Anthropic API *(planned)*
 - **Orchestration**: Kubernetes, local via Minikube *(planned)*
@@ -64,18 +67,23 @@ this use case.
 ## Repository Structure
 
 churn-model-deployment/
+├── .github/workflows/
+│ └── ci.yml # CI: runs tests on every push/PR
 ├── api/ # FastAPI service
 │ ├── main.py # App, /health and /predict endpoints
 │ └── schemas.py # Pydantic request/response models
 ├── data/raw/ # Raw dataset (IBM Telco Customer Churn, extended)
+├── k8s/ # Kubernetes manifests (Phase 7)
 ├── models/ # Serialized trained model (churn_model.pkl)
 ├── notebooks/ # EDA and model training notebook
 ├── src/
 │ └── data_pipeline.py # load_data, clean_data, feature/preprocessing helpers
 ├── tests/
 │ └── test_api.py # API endpoint tests
-├── k8s/ # Kubernetes manifests (Phase 7)
-└── .github/workflows/ # CI pipeline (Phase 4)
+├── Dockerfile # Builds the API serving image
+├── docker-compose.yml # Runs the containerized API locally
+├── requirements.txt # Full dev environment (training, notebooks, testing)
+└── requirements-api.txt # Lean runtime deps for the API/Docker image
 
 
 ## API
@@ -125,6 +133,19 @@ instead of silently reaching the model.
 
 ## How to Reproduce
 
+### Option A — Docker (recommended, matches production setup)
+
+```bash
+git clone https://github.com/JFGBMath/churn-model-deployment.git
+cd churn-model-deployment
+
+docker build -t churn-model-api .
+docker compose up
+# API available at http://localhost:8000/docs
+```
+
+### Option B — Local development (for notebooks / retraining)
+
 ```bash
 git clone https://github.com/JFGBMath/churn-model-deployment.git
 cd churn-model-deployment
@@ -132,13 +153,12 @@ cd churn-model-deployment
 python -m venv venv
 source venv/Scripts/activate   # Windows Git Bash; use venv\Scripts\activate on CMD
 
-pip install pandas numpy scikit-learn jupyter matplotlib seaborn
-pip install fastapi uvicorn pydantic httpx pytest
+pip install -r requirements.txt
 
 # Train the model (or use the one already in models/)
 jupyter notebook notebooks/01_eda_and_model_training.ipynb
 
-# Run the API
+# Run the API locally
 uvicorn api.main:app --reload
 # Visit http://127.0.0.1:8000/docs for interactive Swagger UI
 
@@ -150,8 +170,6 @@ pytest tests/ -v
 
 MIT
 
-
-
 ## Author
 
-Jesús Fernando Gómez Brito ([Linkedin](www.linkedin.com/in/jesús-fernando-gómez-brito-02a895279))
+Jesús Fernando Gómez Brito ([LinkedIn](https://www.linkedin.com/in/jes%C3%BAs-fernando-g%C3%B3mez-brito-02a895279))
