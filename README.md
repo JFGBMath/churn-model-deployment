@@ -5,8 +5,8 @@
 End-to-end machine learning project: from model training to a production-ready,
 containerized API with automated testing and monitoring. Built to demonstrate the
 full lifecycle of taking a data science solution from experimentation to
-production, testing it, and
-deploying it in a containerized, CI-tested setup.
+production, testing it, and deploying it in a containerized, CI-tested,
+monitored setup.
 
 ## Project Status
 
@@ -16,7 +16,7 @@ deploying it in a containerized, CI-tested setup.
 | 2. API | FastAPI service serving predictions | ✅ Done |
 | 3. Containerization | Docker + docker-compose | ✅ Done |
 | 4. Testing & CI | pytest + GitHub Actions | ✅ Done |
-| 5. Monitoring | Prediction logging + data drift detection | ⬜ Pending |
+| 5. Monitoring | Prediction logging + data drift detection | ✅ Done |
 | 6. LLM Explainability | Natural-language prediction explanations | ⬜ Pending |
 | 7. Kubernetes | Local deployment manifests | ⬜ Pending |
 
@@ -30,7 +30,7 @@ classification models.
 
 Columns that leak post-outcome information (`Churn Score`, `CLTV`,
 `Churn Reason`, and the duplicate `Churn Label`) were identified and removed
-before modeling — these are either derived from another model's predictions
+before modeling these are either derived from another model's predictions
 or only populated for customers who already churned, and would make any
 model trained on them look artificially strong while being useless in
 production, where that information isn't available at prediction time.
@@ -40,7 +40,7 @@ production, where that information isn't available at prediction time.
 - **Baseline overall churn rate**: 26.54% (moderate class imbalance 
   `class_weight="balanced"` used in both candidate models).
 - **Models compared**: Logistic Regression vs. Random Forest.
-- **Selection metric**: recall on the churn class, not accuracy in this
+- **Selection metric**: recall on the churn class, not accuracy — in this
   business context, a missed churner (false negative) is more costly than
   a false alarm (unnecessary retention outreach).
 
@@ -50,7 +50,7 @@ production, where that information isn't available at prediction time.
 | Random Forest | 0.52 | 0.63 | 0.8322 |
 
 Logistic Regression was selected for catching significantly more actual
-churners, despite a higher false-positive rate — the right trade-off for
+churners, despite a higher false-positive rate the right trade-off for
 this use case.
 
 ## Tech Stack
@@ -60,7 +60,7 @@ this use case.
 - **Testing**: pytest, FastAPI `TestClient`
 - **Containerization**: Docker, docker-compose
 - **CI/CD**: GitHub Actions (automated test run on every push/PR to `main`)
-- **Monitoring**: Evidently (data drift), custom prediction logging *(planned)*
+- **Monitoring**: Evidently (data drift), custom prediction logging (JSON lines)
 - **Explainability**: SHAP + LLM via Anthropic API *(planned)*
 - **Orchestration**: Kubernetes, local via Minikube *(planned)*
 
@@ -74,10 +74,14 @@ churn-model-deployment/
 │ └── schemas.py # Pydantic request/response models
 ├── data/raw/ # Raw dataset (IBM Telco Customer Churn, extended)
 ├── k8s/ # Kubernetes manifests (Phase 7)
+├── logs/ # Prediction logs + drift reports (gitignored)
 ├── models/ # Serialized trained model (churn_model.pkl)
-├── notebooks/ # EDA and model training notebook
+├── notebooks/
+│ ├── 01_eda_and_model_training.ipynb
+│ └── 02_drift_detection.ipynb # Data drift analysis (reference vs. production logs)
 ├── src/
-│ └── data_pipeline.py # load_data, clean_data, feature/preprocessing helpers
+│ ├── data_pipeline.py # load_data, clean_data, feature/preprocessing helpers
+│ └── monitoring.py # log_prediction() — appends each request to logs/predictions.log
 ├── tests/
 │ └── test_api.py # API endpoint tests
 ├── Dockerfile # Builds the API serving image
@@ -89,10 +93,11 @@ churn-model-deployment/
 ## API
 
 ### `GET /health`
-Returns `{"status": "ok"}` — basic liveness check.
+Returns `{"status": "ok"}` basic liveness check.
 
 ### `POST /predict`
 Accepts customer feature data, returns a churn prediction and probability.
+Every request is logged to `logs/predictions.log` for monitoring (see below).
 
 **Example request:**
 ```json
@@ -131,6 +136,22 @@ All fields are validated with Pydantic (`Literal` types for categoricals,
 numeric bounds for continuous fields) invalid input returns a `422` error
 instead of silently reaching the model.
 
+## Monitoring
+
+Every `/predict` call is logged to `logs/predictions.log` as a JSON line
+(input features, prediction, probability, timestamp), independent of whether
+the API runs locally or in Docker (the log directory is mounted as a volume
+in `docker-compose.yml`).
+
+`notebooks/02_drift_detection.ipynb` uses [Evidently](https://www.evidentlyai.com/)
+to compare the distribution of logged production requests against the
+original training data, flagging feature-level and dataset-level drift.
+Running it against the initial batch of manual test requests correctly
+detected drift on 15 of 19 features (78.9%) expected, since those requests
+were crafted edge cases rather than a representative sample, and confirms
+the drift detection pipeline is sensitive enough to catch a real
+distribution shift when it occurs in production traffic.
+
 ## How to Reproduce
 
 ### Option A — Docker (recommended, matches production setup)
@@ -164,6 +185,9 @@ uvicorn api.main:app --reload
 
 # Run tests
 pytest tests/ -v
+
+# Run drift analysis
+jupyter notebook notebooks/02_drift_detection.ipynb
 ```
 
 ## License

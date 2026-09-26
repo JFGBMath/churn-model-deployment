@@ -4,6 +4,7 @@ import joblib
 import pandas as pd
 from fastapi import FastAPI
 from api.schemas import ChurnPredictionRequest, ChurnPredictionResponse
+from src.monitoring import log_prediction
 
 app = FastAPI(title="Churn Prediction API", version="1.0")
 
@@ -22,6 +23,12 @@ def predict(request: ChurnPredictionRequest):
 
     prediction = model.predict(input_df)[0]
     probability = model.predict_proba(input_df)[0][1]
+
+    log_prediction(
+        input_data=input_dict,
+        prediction="Yes" if prediction == 1 else "No",
+        probability=round(float(probability), 4)
+    )
 
     return ChurnPredictionResponse(
         churn_prediction="Yes" if prediction == 1 else "No",
