@@ -138,6 +138,8 @@ instead of silently reaching the model.
 
 ## Monitoring
 
+![Data Drift Report](docs/drift_report_screenshot.png)
+
 Every `/predict` call is logged to `logs/predictions.log` as a JSON line
 (input features, prediction, probability, timestamp), independent of whether
 the API runs locally or in Docker (the log directory is mounted as a volume
