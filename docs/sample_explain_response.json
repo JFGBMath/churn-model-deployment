@@ -1,0 +1,32 @@
+{
+  "churn_prediction": "Yes",
+  "churn_probability": 0.8178,
+  "top_features": [
+    {
+      "feature": "num__Tenure Months",
+      "impact": "increases",
+      "shap_value": 1.4191
+    },
+    {
+      "feature": "num__Total Charges",
+      "impact": "decreases",
+      "shap_value": -0.4886
+    },
+    {
+      "feature": "num__Monthly Charges",
+      "impact": "decreases",
+      "shap_value": -0.3915
+    },
+    {
+      "feature": "cat__Internet Service_Fiber optic",
+      "impact": "increases",
+      "shap_value": 0.293
+    },
+    {
+      "feature": "cat__Contract_Month-to-month",
+      "impact": "increases",
+      "shap_value": 0.2772
+    }
+  ],
+  "explanation": "# Churn Risk Explanation\n\nThis customer is predicted to have a high risk of leaving because they're on a month-to-month contract with Fiber optic internet service, both of which are associated with higher churn rates. Additionally, they've only been a customer for 2 months, which is a very short tenure and a strong indicator of churn risk—customers typically need more time to become established and satisfied with their service."
+}

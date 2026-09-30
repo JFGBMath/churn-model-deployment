@@ -221,3 +221,4 @@ __marimo__/
 logs/*.log
 logs/*.html
 !logs/.gitkeep
+.env

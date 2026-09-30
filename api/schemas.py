@@ -5,6 +5,14 @@ from typing import Literal
 from pydantic import BaseModel, Field, ConfigDict
 
 
+
+
+class ExplainResponse(BaseModel):
+    churn_prediction: Literal["Yes", "No"]
+    churn_probability: float
+    top_features: list[dict]
+    explanation: str
+
 class ChurnPredictionRequest(BaseModel):
     Gender: Literal["Male", "Female"]
     Senior_Citizen: Literal["No", "Yes"] = Field(alias="Senior Citizen")

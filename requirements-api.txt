@@ -5,3 +5,6 @@ pandas
 numpy
 scikit-learn
 joblib
+shap
+anthropic
+python-dotenv
