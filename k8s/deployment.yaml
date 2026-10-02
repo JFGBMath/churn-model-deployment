@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: churn-model-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: churn-model-api
+  template:
+    metadata:
+      labels:
+        app: churn-model-api
+    spec:
+      containers:
+        - name: churn-model-api
+          image: churn-model-api:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8000
+          env:
+            - name: ANTHROPIC_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: churn-api-secrets
+                  key: anthropic-api-key

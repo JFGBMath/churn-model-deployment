@@ -1,5 +1,6 @@
 venv/
 data/
+!data/background_sample.csv
 notebooks/
 tests/
 .git/

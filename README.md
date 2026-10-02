@@ -5,7 +5,7 @@
 End-to-end machine learning project: from model training to a production-ready,
 containerized API with automated testing, monitoring, and LLM-based
 explainability. Built to demonstrate the full lifecycle of taking a data
-science solution from experimentation to production not just training a
+science solution from experimentation to production — not just training a
 model, but serving it, testing it, monitoring it, and making its predictions
 understandable.
 
@@ -19,7 +19,7 @@ understandable.
 | 4. Testing & CI | pytest + GitHub Actions | ✅ Done |
 | 5. Monitoring | Prediction logging + data drift detection | ✅ Done |
 | 6. LLM Explainability | Natural-language prediction explanations | ✅ Done |
-| 7. Kubernetes | Local deployment manifests | ⬜ Pending |
+| 7. Kubernetes | Local deployment manifests | ✅ Done |
 
 ## Problem
 
@@ -31,7 +31,7 @@ classification models.
 
 Columns that leak post-outcome information (`Churn Score`, `CLTV`,
 `Churn Reason`, and the duplicate `Churn Label`) were identified and removed
-before modeling these are either derived from another model's predictions
+before modeling — these are either derived from another model's predictions
 or only populated for customers who already churned, and would make any
 model trained on them look artificially strong while being useless in
 production, where that information isn't available at prediction time.
@@ -51,7 +51,7 @@ production, where that information isn't available at prediction time.
 | Random Forest | 0.52 | 0.63 | 0.8322 |
 
 Logistic Regression was selected for catching significantly more actual
-churners, despite a higher false-positive rate the right trade-off for
+churners, despite a higher false-positive rate — the right trade-off for
 this use case.
 
 ## Tech Stack
@@ -63,9 +63,10 @@ this use case.
 - **CI/CD**: GitHub Actions (automated test run on every push/PR to `main`)
 - **Monitoring**: Evidently (data drift), custom prediction logging (JSON lines)
 - **Explainability**: SHAP (`LinearExplainer`) + Claude Haiku via Anthropic API
-- **Orchestration**: Kubernetes, local via Minikube *(planned)*
+- **Orchestration**: Kubernetes, local via Minikube
 
 ## Repository Structure
+
 churn-model-deployment/
 ├── .github/workflows/
 │ └── ci.yml # CI: runs tests on every push/PR
@@ -76,7 +77,7 @@ churn-model-deployment/
 │ ├── raw/ # Raw dataset (IBM Telco Customer Churn, extended)
 │ └── background_sample.csv # Reference sample for SHAP explainer
 ├── docs/ # Portfolio assets (screenshots, sample outputs)
-├── k8s/ # Kubernetes manifests (Phase 7)
+├── k8s/ # Kubernetes manifests
 ├── logs/ # Prediction logs + drift reports (gitignored)
 ├── models/ # Serialized trained model (churn_model.pkl)
 ├── notebooks/
@@ -137,7 +138,7 @@ Every request is logged to `logs/predictions.log` for monitoring (see below).
 ```
 
 All fields are validated with Pydantic (`Literal` types for categoricals,
-numeric bounds for continuous fields) invalid input returns a `422` error
+numeric bounds for continuous fields) — invalid input returns a `422` error
 instead of silently reaching the model.
 
 ### `POST /explain`
@@ -158,7 +159,7 @@ in `docker-compose.yml`).
 to compare the distribution of logged production requests against the
 original training data, flagging feature-level and dataset-level drift.
 Running it against the initial batch of manual test requests correctly
-detected drift on 15 of 19 features (78.9%) expected, since those requests
+detected drift on 15 of 19 features (78.9%) — expected, since those requests
 were crafted edge cases rather than a representative sample, and confirms
 the drift detection pipeline is sensitive enough to catch a real
 distribution shift when it occurs in production traffic.
@@ -197,14 +198,38 @@ understandable:
     {"feature": "cat__Internet Service_Fiber optic", "impact": "increases", "shap_value": 0.293},
     {"feature": "cat__Contract_Month-to-month", "impact": "increases", "shap_value": 0.2772}
   ],
-  "explanation": "This customer is predicted to have a high risk of leaving because they're on a month-to-month contract with Fiber optic internet service, both of which are associated with higher churn rates. Additionally, they've only been a customer for 2 months, which is a very short tenure and a strong indicator of churn risk customers typically need more time to become established and satisfied with their service."
+  "explanation": "This customer is predicted to have a high risk of leaving because they're on a month-to-month contract with Fiber optic internet service, both of which are associated with higher churn rates. Additionally, they've only been a customer for 2 months, which is a very short tenure and a strong indicator of churn risk — customers typically need more time to become established and satisfied with their service."
 }
 ```
 
-**Requires a funded `ANTHROPIC_API_KEY`** in a `.env` file (see `.env.example`
-if present, or set the variable directly) to run live  this uses a small
-amount of real API credit per call (Claude Haiku, a few hundred tokens per
-request).
+**Requires a funded `ANTHROPIC_API_KEY`** in a `.env` file to run live — this
+uses a small amount of real API credit per call (Claude Haiku, a few hundred
+tokens per request).
+
+## Kubernetes
+
+![Kubernetes Deployment](docs/kubernetes_screenshot.png)
+
+The API also runs on a local Kubernetes cluster via Minikube, demonstrating
+the deployment pattern used in production orchestration environments.
+`k8s/deployment.yaml` defines a single-replica Deployment (with the
+Anthropic API key injected via a Kubernetes Secret rather than hardcoded),
+and `k8s/service.yaml` exposes it as a NodePort Service.
+
+```bash
+minikube start --driver=docker
+docker build -t churn-model-api:latest .
+minikube image load churn-model-api:latest
+
+kubectl create secret generic churn-api-secrets \
+  --from-literal=anthropic-api-key=YOUR_KEY_HERE
+
+kubectl apply -f k8s/deployment.yaml
+kubectl apply -f k8s/service.yaml
+
+minikube service churn-model-api-service --url
+# Use the printed URL to hit /health, /predict, /explain
+```
 
 ## How to Reproduce
 
@@ -243,6 +268,10 @@ pytest tests/ -v
 # Run drift analysis
 jupyter notebook notebooks/02_drift_detection.ipynb
 ```
+
+### Option C — Kubernetes (local cluster via Minikube)
+
+See the Kubernetes section above for the full command sequence.
 
 ## License
 

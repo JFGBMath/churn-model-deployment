@@ -10,6 +10,7 @@ RUN pip install --no-cache-dir -r requirements-api.txt
 COPY api/ api/
 COPY src/ src/
 COPY models/ models/
+COPY data/background_sample.csv data/background_sample.csv
 
 EXPOSE 8000
 
